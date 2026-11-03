@@ -1,0 +1,8 @@
+.venv/
+.venv-*/
+__pycache__/
+*.py[cod]
+intrinsiclens_chat.sqlite3
+intrinsiclens_chat.sqlite3-*
+.Rhistory
+.streamlit/secrets.toml
