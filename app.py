@@ -397,7 +397,7 @@ if "symbol" not in st.session_state:
       <ol style="margin:0;padding-left:22px;display:grid;gap:8px;color:#586557">
         <li>Use the “Updated intrinsic value estimate” to estimate intrinsic value for your business.</li>
         <li>Plug the estimated value into “Your estimate of intrinsic value per share” under Margin of Safety.</li>
-        <li>Apply your margin of safety to estimate your entry price.</li>
+        <li>Apply your margin of safety to estimate your entry &amp; exit price.</li>
       </ol>
     </div>
     """, unsafe_allow_html=True)
