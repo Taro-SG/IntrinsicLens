@@ -1,6 +1,6 @@
 # IntrinsicLens
 
-A ticker lookup app for exploring historical prices, selected company financials, and three value-investing ideas.
+A ticker lookup app for exploring historical prices, selected company financials, and three principles for value investing
 
 ## Run locally
 
