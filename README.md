@@ -1,6 +1,6 @@
 # IntrinsicLens
 
-A value investing app for estimating company's intrinsic value and risk by applying three principles from Graham-Buffet school of investing: https://intrinsiclens.streamlit.app/
+A value investing planner that facilitate a entry/exit plan by estimating company's intrinsic value and risk under the three principles from Graham-Buffet approach: https://intrinsiclens.streamlit.app/
 
 ## Run locally
 
