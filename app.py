@@ -314,46 +314,6 @@ def load_intraday_history(symbol, period):
     return intraday.dropna(subset=["Close"])
 
 
-@st.cache_data(ttl=900, show_spinner=False)
-def scan_ticker_list(symbols):
-    results = []
-    for symbol in symbols:
-        try:
-            ticker = yf.Ticker(symbol)
-            info = ticker.info or {}
-            history = ticker.history(period="5d", interval="1d", auto_adjust=True)
-            closes = history["Close"].dropna().astype(float) if not history.empty and "Close" in history else pd.Series(dtype=float)
-            price = finite_number(info.get("regularMarketPrice"), info.get("currentPrice"), closes.iloc[-1] if not closes.empty else None)
-            previous_close = finite_number(info.get("regularMarketPreviousClose"), closes.iloc[-2] if len(closes) >= 2 else None)
-            day_change = finite_number((price / previous_close - 1) * 100) if price is not None and previous_close else None
-            volume_values = history["Volume"].dropna() if not history.empty and "Volume" in history else pd.Series(dtype=float)
-            volume = finite_number(info.get("regularMarketVolume"), volume_values.iloc[-1] if not volume_values.empty else None)
-            market_cap = finite_number(info.get("marketCap"))
-            trailing_pe = finite_number(info.get("trailingPE"))
-            results.append({
-                "Ticker": symbol,
-                "Company": info.get("shortName") or info.get("longName") or symbol,
-                "Price": price,
-                "Day change (%)": day_change,
-                "Volume": volume,
-                "Market cap ($B)": market_cap / 1e9 if market_cap is not None else None,
-                "Trailing P/E": trailing_pe,
-                "Status": "OK" if price is not None else "Price unavailable",
-            })
-        except Exception:
-            results.append({
-                "Ticker": symbol,
-                "Company": symbol,
-                "Price": None,
-                "Day change (%)": None,
-                "Volume": None,
-                "Market cap ($B)": None,
-                "Trailing P/E": None,
-                "Status": "Data unavailable",
-            })
-    return results
-
-
 st.markdown("""
 <div class="principle-banner">
   <div class="principle-track">
@@ -655,65 +615,5 @@ dd_fig.update_yaxes(range=[dd_view["Close"].min() - dd_padding, dd_view["Close"]
 st.plotly_chart(dd_fig, use_container_width=True, config={"displayModeBar": False})
 
 st.markdown("<div style='padding:16px 18px;border:1px solid #e6e9e3;border-radius:12px;color:#788178;font-size:12px'>Data is provided by Yahoo Finance through yfinance and may be delayed, incomplete, or unavailable. This tool is for informational and educational use, not investment advice. Financial statement labels and coverage can vary by company.</div>", unsafe_allow_html=True)
-
-st.divider()
-st.markdown("#### Stock scanner")
-st.caption("Scan up to 20 tickers at a time. Enter symbols separated by commas; results include price, daily change, volume, market cap, and trailing P/E.")
-scan_input_col, scan_button_col = st.columns([5, 1])
-with scan_input_col:
-    scan_query = st.text_input("Tickers to scan", placeholder="AAPL, MSFT, GOOG", max_chars=200, label_visibility="collapsed", key="stock_scanner_query")
-with scan_button_col:
-    scan_clicked = st.button("Scan →", type="primary", use_container_width=True, key="stock_scanner_button")
-
-filter_cols = st.columns(4)
-with filter_cols[0]:
-    change_range = st.slider("Daily change range (%)", min_value=-100, max_value=100, value=(-100, 100), step=1, key="stock_scanner_change_range")
-with filter_cols[1]:
-    max_pe = st.number_input("Max trailing P/E (0 = no limit)", min_value=0.0, value=0.0, step=1.0, key="stock_scanner_max_pe")
-with filter_cols[2]:
-    min_market_cap = st.number_input("Min market cap ($B)", min_value=0.0, value=0.0, step=1.0, key="stock_scanner_min_market_cap")
-with filter_cols[3]:
-    min_volume = st.number_input("Min daily volume", min_value=0, value=0, step=100000, key="stock_scanner_min_volume")
-
-if scan_clicked:
-    scan_symbols = tuple(dict.fromkeys(item.strip().upper() for item in scan_query.split(",") if item.strip()))
-    if not scan_symbols:
-        st.warning("Enter one or more ticker symbols to scan.")
-    elif len(scan_symbols) > 20:
-        st.warning("Scan up to 20 tickers at a time.")
-    else:
-        with st.spinner(f"Scanning {len(scan_symbols)} ticker(s)…"):
-            st.session_state["stock_scanner_results"] = scan_ticker_list(scan_symbols)
-
-if st.session_state.get("stock_scanner_results"):
-    scanner_results = pd.DataFrame(st.session_state["stock_scanner_results"])
-    change_min, change_max = change_range
-    if change_min > -100:
-        scanner_results = scanner_results[scanner_results["Day change (%)"].notna() & (scanner_results["Day change (%)"] >= change_min)]
-    if change_max < 100:
-        scanner_results = scanner_results[scanner_results["Day change (%)"].notna() & (scanner_results["Day change (%)"] <= change_max)]
-    if max_pe > 0:
-        scanner_results = scanner_results[
-            scanner_results["Trailing P/E"].notna()
-            & (scanner_results["Trailing P/E"] > 0)
-            & (scanner_results["Trailing P/E"] <= max_pe)
-        ]
-    if min_market_cap > 0:
-        scanner_results = scanner_results[scanner_results["Market cap ($B)"].notna() & (scanner_results["Market cap ($B)"] >= min_market_cap)]
-    if min_volume > 0:
-        scanner_results = scanner_results[scanner_results["Volume"].notna() & (scanner_results["Volume"] >= min_volume)]
-    st.caption(f"Showing {len(scanner_results)} matching ticker(s).")
-    st.dataframe(
-        scanner_results,
-        hide_index=True,
-        use_container_width=True,
-        column_config={
-            "Price": st.column_config.NumberColumn(format="$%.2f"),
-            "Day change (%)": st.column_config.NumberColumn(format="%.2f%%"),
-            "Volume": st.column_config.NumberColumn(format="localized"),
-            "Market cap ($B)": st.column_config.NumberColumn(format="$%.1fB"),
-            "Trailing P/E": st.column_config.NumberColumn(format="%.2f"),
-        },
-    )
 
 live_chat_room()

@@ -21,10 +21,6 @@ Enter a ticker such as `AAPL`, `MSFT`, or `COST`, or type a company name and cho
 - **Graham estimates:** The Graham Number uses average annual EPS and book value per share. The updated intrinsic-value formula uses latest annual EPS and your manually entered expected growth rate (`g`) and current 20-year AAA corporate bond yield (`Y`): `EPS × (8.5 + 2g) × 4.4 ÷ Y`. Enter `g` and `Y` as percentage numbers (for example, `5` for 5%). The yield is not automatically updated.
 - **Business ownership:** Review annual revenue, revenue growth, operating margin, and net income, alongside questions about the underlying business.
 
-## Stock scanner
-
-In the app, enter up to 20 comma-separated ticker symbols to compare latest price, daily price change, daily volume, market capitalization, and trailing P/E. Filter the results by daily change, maximum positive trailing P/E, minimum market capitalization, and minimum volume. The scanner uses Yahoo Finance data and caches results for 15 minutes; securities with missing data may show unavailable values.
-
 ## Data notes
 
 Market and company data are fetched with [yfinance](https://ranaroussi.github.io/yfinance/), which accesses Yahoo Finance data and is not an official Yahoo Finance product. Data may be delayed, incomplete, or temporarily unavailable. Fundamentals and historical coverage vary across securities. Historical calculations are informational and are not investment advice.
