@@ -499,72 +499,6 @@ else:
     st.info("Enter an expected EPS growth rate and the current 20-year AAA corporate bond yield to calculate this estimate. The yield is a manual input and is not live-updated.")
 
 st.divider()
-st.markdown("#### Graham Number")
-st.caption("A traditional rule-of-thumb price estimate: √(22.5 × average annual EPS × book value per share). Uses up to five reported fiscal years and the latest reported equity; it is not a full valuation model.")
-graham_cols = st.columns(3)
-graham_cols[0].metric("Average annual EPS", f"{currency} {average_eps:.2f}" if average_eps is not None else "—", f"{eps_years} year(s), {eps_basis}" if average_eps is not None else "Not reported")
-graham_cols[1].metric("Book value per share", money(book_value_per_share, currency), "Latest equity ÷ shares outstanding")
-graham_cols[2].metric("Graham Number", money(graham_number, currency), "Shown only when both inputs are positive")
-
-st.divider()
-chart_col, side_col = st.columns([1.7, 1])
-with chart_col:
-    st.markdown("#### Price history")
-    period = st.segmented_control("Period", ["1D", "5D", "1M", "6M", "YTD", "1Y", "5Y", "All"], default="1Y", label_visibility="collapsed") or "1Y"
-    if period in {"1D", "5D"}:
-        view = load_intraday_history(symbol, period)
-    elif period == "All":
-        view = history
-    elif period == "YTD":
-        year_start = pd.Timestamp(year=now.year, month=1, day=1, tz=history.index.tz)
-        view = history.loc[history.index >= year_start]
-    else:
-        days = {"1M": 30, "6M": 182, "1Y": 365, "5Y": 365 * 5}[period]
-        view = history.loc[history.index >= now - pd.Timedelta(days=days)]
-
-    if view.empty:
-        st.info(f"Price history for {period} is not available from the data provider right now.")
-    else:
-        view = view.dropna(subset=["Close"])
-        price_peak_date = view["Close"].idxmax()
-        price_bottom_date = view["Close"].idxmin()
-        show_extrema_summary(view.loc[price_peak_date, "Close"], price_peak_date, view.loc[price_bottom_date, "Close"], price_bottom_date, currency)
-        fig = go.Figure(go.Scatter(x=view.index, y=view["Close"], mode="lines", line=dict(color="#5c8655", width=2), fill="tozeroy", fillcolor="rgba(92,134,85,.09)", hovertemplate="%{x|%b %d, %Y}<br>" + currency + " %{y:,.2f}<extra></extra>"))
-        add_high_low_markers(fig, view, currency)
-        fig.update_layout(height=330, margin=dict(l=5, r=5, t=8, b=5), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#778178", size=11), xaxis=dict(showgrid=False, linecolor="#e6e9e3"), yaxis=dict(title=None, gridcolor="#e9ece7", side="right", tickprefix=currency + " "), hovermode="x unified")
-        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-with side_col:
-    st.markdown("#### Balance sheet")
-    st.caption("Most recent reported period")
-    total_assets = statement_value(balance, ["Total Assets"]) or info.get("totalAssets")
-    total_debt = statement_value(balance, ["Total Debt", "Long Term Debt"]) or info.get("totalDebt")
-    total_liabilities = statement_value(balance, ["Total Liabilities Net Minority Interest", "Total Liabilities"]) or info.get("totalLiabilities")
-    st.metric("Total assets", compact(total_assets, currency))
-    st.metric("Total debt", compact(total_debt, currency))
-    st.metric("Assets / debt", ratio(total_assets / total_debt if total_assets is not None and total_debt else None))
-    st.metric("Assets / liabilities", ratio(total_assets / total_liabilities if total_assets is not None and total_liabilities else None))
-    st.caption("Ratios use the latest available balance-sheet figures; a dash means the provider did not report the value.")
-
-st.divider()
-st.markdown("#### Worst historical drop (maximum drawdown)")
-st.caption("This answers: how far did the stock fall from a previous high before reaching its next bottom? It helps show the severity of a past downturn and is not a forecast of future losses.")
-dd_peak_price = history.loc[dd_start, "Close"]
-dd_trough_price = history.loc[dd_end, "Close"]
-hypothetical_value = 10_000 * dd_trough_price / dd_peak_price if dd_peak_price else None
-dd_summary = st.columns(3)
-dd_summary[0].metric("Largest peak-to-trough fall", f"{max_decline:.1f}%")
-dd_summary[1].metric("Prior peak", money(dd_peak_price, currency), dd_start.strftime("%b %d, %Y"))
-dd_summary[2].metric("Later bottom", money(dd_trough_price, currency), dd_end.strftime("%b %d, %Y"))
-st.info(f"Illustration: $10,000 at that prior peak would have been worth about {money(hypothetical_value, currency)} at the bottom, based on adjusted prices. This is a historical example, not a prediction.")
-dd_view = ten_year_history.loc[dd_start:dd_end]
-dd_fig = go.Figure(go.Scatter(x=dd_view.index, y=dd_view["Close"], mode="lines", line=dict(color="#bc775e", width=2), fill="tozeroy", fillcolor="rgba(188,119,94,.10)", hovertemplate="%{x|%b %d, %Y}<br>" + currency + " %{y:,.2f}<extra></extra>"))
-dd_fig.add_trace(go.Scatter(x=[dd_start, dd_end], y=[dd_peak_price, dd_trough_price], mode="markers+text", text=["Peak", "Bottom"], textposition=["bottom right", "bottom right"], marker=dict(color=["#5c8655", "#2f6bce"], size=12, line=dict(color="#ffffff", width=2)), showlegend=False, hovertemplate="%{text}<br>%{x|%b %d, %Y}<br>" + currency + " %{y:,.2f}<extra></extra>"))
-dd_fig.update_layout(height=210, margin=dict(l=5, r=5, t=8, b=5), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#778178", size=11), xaxis=dict(showgrid=False, linecolor="#e6e9e3"), yaxis=dict(title=None, gridcolor="#e9ece7", side="right"), hovermode="x unified")
-dd_padding = (dd_view["Close"].max() - dd_view["Close"].min()) * 0.15 or abs(dd_peak_price) * 0.05 or 1
-dd_fig.update_yaxes(range=[dd_view["Close"].min() - dd_padding, dd_view["Close"].max() + dd_padding])
-st.plotly_chart(dd_fig, use_container_width=True, config={"displayModeBar": False})
-
-st.divider()
 st.markdown("#### Three value-investing lenses")
 st.caption("Use these illustrations to structure your own analysis. They are not a buy/sell signal, and the app does not know your estimate of a business’s value.")
 safety_tab, business_tab, market_tab = st.tabs(["01 · Margin of Safety", "02 · Business Fundamentals", "03 · Mr. Market"])
@@ -653,6 +587,72 @@ with business_tab:
     q1.markdown("Can I explain what it sells, who pays, and why customers return?")
     q2.markdown("Are revenue and profits durable across different conditions?")
     q3.markdown("Does it have an advantage, and can it fund growth without excessive debt?")
+
+st.divider()
+st.markdown("#### Graham Number")
+st.caption("A traditional rule-of-thumb price estimate: √(22.5 × average annual EPS × book value per share). Uses up to five reported fiscal years and the latest reported equity; it is not a full valuation model.")
+graham_cols = st.columns(3)
+graham_cols[0].metric("Average annual EPS", f"{currency} {average_eps:.2f}" if average_eps is not None else "—", f"{eps_years} year(s), {eps_basis}" if average_eps is not None else "Not reported")
+graham_cols[1].metric("Book value per share", money(book_value_per_share, currency), "Latest equity ÷ shares outstanding")
+graham_cols[2].metric("Graham Number", money(graham_number, currency), "Shown only when both inputs are positive")
+
+st.divider()
+chart_col, side_col = st.columns([1.7, 1])
+with chart_col:
+    st.markdown("#### Price history")
+    period = st.segmented_control("Period", ["1D", "5D", "1M", "6M", "YTD", "1Y", "5Y", "All"], default="1Y", label_visibility="collapsed") or "1Y"
+    if period in {"1D", "5D"}:
+        view = load_intraday_history(symbol, period)
+    elif period == "All":
+        view = history
+    elif period == "YTD":
+        year_start = pd.Timestamp(year=now.year, month=1, day=1, tz=history.index.tz)
+        view = history.loc[history.index >= year_start]
+    else:
+        days = {"1M": 30, "6M": 182, "1Y": 365, "5Y": 365 * 5}[period]
+        view = history.loc[history.index >= now - pd.Timedelta(days=days)]
+
+    if view.empty:
+        st.info(f"Price history for {period} is not available from the data provider right now.")
+    else:
+        view = view.dropna(subset=["Close"])
+        price_peak_date = view["Close"].idxmax()
+        price_bottom_date = view["Close"].idxmin()
+        show_extrema_summary(view.loc[price_peak_date, "Close"], price_peak_date, view.loc[price_bottom_date, "Close"], price_bottom_date, currency)
+        fig = go.Figure(go.Scatter(x=view.index, y=view["Close"], mode="lines", line=dict(color="#5c8655", width=2), fill="tozeroy", fillcolor="rgba(92,134,85,.09)", hovertemplate="%{x|%b %d, %Y}<br>" + currency + " %{y:,.2f}<extra></extra>"))
+        add_high_low_markers(fig, view, currency)
+        fig.update_layout(height=330, margin=dict(l=5, r=5, t=8, b=5), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#778178", size=11), xaxis=dict(showgrid=False, linecolor="#e6e9e3"), yaxis=dict(title=None, gridcolor="#e9ece7", side="right", tickprefix=currency + " "), hovermode="x unified")
+        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+with side_col:
+    st.markdown("#### Balance sheet")
+    st.caption("Most recent reported period")
+    total_assets = statement_value(balance, ["Total Assets"]) or info.get("totalAssets")
+    total_debt = statement_value(balance, ["Total Debt", "Long Term Debt"]) or info.get("totalDebt")
+    total_liabilities = statement_value(balance, ["Total Liabilities Net Minority Interest", "Total Liabilities"]) or info.get("totalLiabilities")
+    st.metric("Total assets", compact(total_assets, currency))
+    st.metric("Total debt", compact(total_debt, currency))
+    st.metric("Assets / debt", ratio(total_assets / total_debt if total_assets is not None and total_debt else None))
+    st.metric("Assets / liabilities", ratio(total_assets / total_liabilities if total_assets is not None and total_liabilities else None))
+    st.caption("Ratios use the latest available balance-sheet figures; a dash means the provider did not report the value.")
+
+st.divider()
+st.markdown("#### Worst historical drop (maximum drawdown)")
+st.caption("This answers: how far did the stock fall from a previous high before reaching its next bottom? It helps show the severity of a past downturn and is not a forecast of future losses.")
+dd_peak_price = history.loc[dd_start, "Close"]
+dd_trough_price = history.loc[dd_end, "Close"]
+hypothetical_value = 10_000 * dd_trough_price / dd_peak_price if dd_peak_price else None
+dd_summary = st.columns(3)
+dd_summary[0].metric("Largest peak-to-trough fall", f"{max_decline:.1f}%")
+dd_summary[1].metric("Prior peak", money(dd_peak_price, currency), dd_start.strftime("%b %d, %Y"))
+dd_summary[2].metric("Later bottom", money(dd_trough_price, currency), dd_end.strftime("%b %d, %Y"))
+st.info(f"Illustration: $10,000 at that prior peak would have been worth about {money(hypothetical_value, currency)} at the bottom, based on adjusted prices. This is a historical example, not a prediction.")
+dd_view = ten_year_history.loc[dd_start:dd_end]
+dd_fig = go.Figure(go.Scatter(x=dd_view.index, y=dd_view["Close"], mode="lines", line=dict(color="#bc775e", width=2), fill="tozeroy", fillcolor="rgba(188,119,94,.10)", hovertemplate="%{x|%b %d, %Y}<br>" + currency + " %{y:,.2f}<extra></extra>"))
+dd_fig.add_trace(go.Scatter(x=[dd_start, dd_end], y=[dd_peak_price, dd_trough_price], mode="markers+text", text=["Peak", "Bottom"], textposition=["bottom right", "bottom right"], marker=dict(color=["#5c8655", "#2f6bce"], size=12, line=dict(color="#ffffff", width=2)), showlegend=False, hovertemplate="%{text}<br>%{x|%b %d, %Y}<br>" + currency + " %{y:,.2f}<extra></extra>"))
+dd_fig.update_layout(height=210, margin=dict(l=5, r=5, t=8, b=5), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#778178", size=11), xaxis=dict(showgrid=False, linecolor="#e6e9e3"), yaxis=dict(title=None, gridcolor="#e9ece7", side="right"), hovermode="x unified")
+dd_padding = (dd_view["Close"].max() - dd_view["Close"].min()) * 0.15 or abs(dd_peak_price) * 0.05 or 1
+dd_fig.update_yaxes(range=[dd_view["Close"].min() - dd_padding, dd_view["Close"].max() + dd_padding])
+st.plotly_chart(dd_fig, use_container_width=True, config={"displayModeBar": False})
 
 st.markdown("<div style='padding:16px 18px;border:1px solid #e6e9e3;border-radius:12px;color:#788178;font-size:12px'>Data is provided by Yahoo Finance through yfinance and may be delayed, incomplete, or unavailable. This tool is for informational and educational use, not investment advice. Financial statement labels and coverage can vary by company.</div>", unsafe_allow_html=True)
 
