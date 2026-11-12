@@ -76,6 +76,38 @@ def finite_number(*values):
     return None
 
 
+@st.cache_data(ttl=3600, show_spinner=False)
+def fetch_expected_eps_growth(symbol):
+    try:
+        estimates = yf.Ticker(symbol).growth_estimates
+        if estimates is None or estimates.empty or "+5y" not in estimates.index or "stock" not in estimates.columns:
+            return None
+        value = finite_number(estimates.loc["+5y", "stock"])
+        if value is None:
+            return None
+        return value * 100 if abs(value) <= 1 else value
+    except Exception:
+        return None
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def fetch_latest_aaa_yield():
+    try:
+        fred = pd.read_csv("https://fred.stlouisfed.org/graph/fredgraph.csv?id=AAA")
+        date_column = next((column for column in fred.columns if column.lower() in {"observation_date", "date"}), None)
+        value_column = next((column for column in fred.columns if column.upper() == "AAA"), None)
+        if date_column is None or value_column is None:
+            return None, None
+        fred[value_column] = pd.to_numeric(fred[value_column], errors="coerce")
+        available = fred.dropna(subset=[value_column])
+        if available.empty:
+            return None, None
+        latest = available.iloc[-1]
+        return finite_number(latest[value_column]), str(latest[date_column])
+    except Exception:
+        return None, None
+
+
 def compact(value, currency="USD"):
     if value is None or pd.isna(value):
         return "—"
@@ -411,12 +443,14 @@ graham_number = math.sqrt(22.5 * average_eps * book_value_per_share) if average_
 
 st.markdown(f"<div style='margin:1.4rem 0 1rem'><span class='eyebrow'>{symbol}</span><h2 style='margin:.2rem 0;color:#1b2a20'>{name}</h2><span style='color:#728076'>{info.get('sector','')}{' · ' if info.get('sector') and info.get('industry') else ''}{info.get('industry','')}</span></div>", unsafe_allow_html=True)
 
-growth_summary_raw = str(st.session_state.get(f"graham_growth_{symbol}", "")).strip()
-yield_summary_raw = str(st.session_state.get(f"graham_yield_{symbol}", "")).strip()
-growth_summary_value = finite_number(growth_summary_raw.replace(",", ""))
-yield_summary_value = finite_number(yield_summary_raw.replace(",", ""))
-growth_summary = f"{growth_summary_value:g}%" if growth_summary_value is not None else ("Invalid" if growth_summary_raw else "Not entered")
-yield_summary = f"{yield_summary_value:g}%" if yield_summary_value is not None else ("Invalid" if yield_summary_raw else "Not entered")
+growth_summary_value = fetch_expected_eps_growth(symbol)
+aaa_yield_summary, aaa_yield_date = fetch_latest_aaa_yield()
+growth_summary = f"{growth_summary_value:.1f}%" if growth_summary_value is not None else "Unavailable"
+yield_summary = f"{aaa_yield_summary:.2f}%" if aaa_yield_summary is not None else "Unavailable"
+yahoo_analysis_url = f"https://finance.yahoo.com/quote/{quote(symbol, safe='')}/analysis/"
+growth_source_link = f"<a href='{yahoo_analysis_url}' target='_blank' rel='noopener noreferrer'>Yahoo Finance ↗</a>"
+yield_observation = f" · {aaa_yield_date}" if aaa_yield_date else ""
+yield_source_link = f"<a href='https://fred.stlouisfed.org/series/AAA' target='_blank' rel='noopener noreferrer'>FRED Moody’s Aaa{yield_observation} ↗</a>"
 
 cards = st.columns(6)
 metrics = [
@@ -424,13 +458,14 @@ metrics = [
     ("P/E ratio", ratio(info.get("trailingPE")), "Trailing twelve months"),
     ("52-week range", f"{money(year_low, currency)} – {money(year_high, currency)}", "Reported or observed range"),
     ("10-year max decline", f"{max_decline:.1f}%", f"Peak {dd_start.strftime('%b %Y')} → bottom {dd_end.strftime('%b %Y')}"),
-    ("Expected annual EPS growth", growth_summary, "g · input below"),
-    ("Current 20-year AAA yield", yield_summary, "Y · input below"),
+    ("Expected annual EPS growth", growth_summary, f"Next 5 years, annualized · {growth_source_link}"),
+    ("Current 20-year AAA yield", yield_summary, yield_source_link),
 ]
 for col, (label, value, note) in zip(cards, metrics):
     with col:
         size = "20px" if label == "52-week range" else "25px"
         st.markdown(f"<div class='metric-card'><div class='metric-label'>{label}</div><div class='metric-value' style='font-size:{size}'>{value}</div><div class='metric-note'>{note}</div></div>", unsafe_allow_html=True)
+st.caption("The yield reference is Moody’s monthly seasoned Aaa corporate yield from FRED, a long-term benchmark rather than an exact 20-year spot yield.")
 
 st.divider()
 st.markdown("#### Updated intrinsic value estimate")
