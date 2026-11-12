@@ -473,7 +473,7 @@ st.caption("V = [EPS × (8.5 + 2g) × 4.4] ÷ Y. EPS uses the latest reported an
 assumption_cols = st.columns([1, 1, 1.25])
 assumption_cols[0].metric("Latest annual EPS", f"{currency} {latest_eps:.2f}" if latest_eps is not None else "—", latest_eps_basis or "Not reported")
 with assumption_cols[1]:
-    growth_text = st.text_input("Expected annual EPS growth, g (%)", placeholder="e.g. 5", key=f"graham_growth_{symbol}")
+    growth_text = st.text_input("Expected annual EPS growth, g (%)", placeholder="Enter current growth", key=f"graham_growth_{symbol}")
     encoded_symbol = quote(symbol, safe="")
     sec_10k_url = f"https://www.sec.gov/edgar/search/#/q={encoded_symbol}&dateRange=all&category=custom&forms=10-K"
     sec_8k_url = f"https://www.sec.gov/edgar/search/#/q={encoded_symbol}&dateRange=all&category=custom&forms=8-K"
