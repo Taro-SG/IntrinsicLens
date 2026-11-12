@@ -1,6 +1,6 @@
 # IntrinsicLens
 
-A ticker lookup app for exploring historical prices, selected company financials, and three principles for value investing
+A ticker lookup app for exploring historical prices, selected company financials, and three principles for value investing: https://intrinsiclens.streamlit.app/
 
 ## Run locally
 
