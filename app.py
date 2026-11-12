@@ -28,8 +28,6 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 .metric-label { color:#778178; font-size:12px; margin-bottom:10px; }
 .metric-value { color:#19261f; font:500 25px 'DM Mono',monospace; letter-spacing:-.04em; }
 .metric-note { color:#879087; font-size:11px; margin-top:7px; }
-.return-link { display:inline-flex; align-items:center; padding:8px 12px; border:1px solid #dce8dc; border-radius:9px; background:#fff; color:#315f3b; font-size:13px; font-weight:600; text-decoration:none; }
-.return-link:hover { background:#edf5ed; border-color:#cfe0cf; color:#244a2e; }
 .principle-banner { height:64px; box-sizing:border-box; overflow:hidden; margin:0 0 16px; border:1px solid #dce8dc; border-radius:14px; background:linear-gradient(110deg,#edf4eb,#f8f8f2); color:#263c2c; }
 .principle-track { display:flex; width:400%; height:100%; animation:principle-slide 39s infinite linear; }
 .principle-slide { flex:0 0 25%; box-sizing:border-box; display:flex; align-items:center; justify-content:center; padding:12px 20px; text-align:center; font-size:clamp(14px,2vw,18px); font-weight:600; letter-spacing:-.02em; }
@@ -349,7 +347,6 @@ def load_intraday_history(symbol, period):
 
 
 st.markdown("""
-<div id="page-top"></div>
 <div class="principle-banner">
   <div class="principle-track">
     <div class="principle-slide">Treat Mr. Market as your servant, not your guide.</div>
@@ -504,8 +501,6 @@ elif growth_rate is not None and aaa_yield is not None:
     st.warning("This calculation requires positive reported EPS, a positive bond yield, and a positive growth multiplier (8.5 + 2g).")
 else:
     st.info("Enter an expected EPS growth rate and the current 20-year AAA corporate bond yield to calculate this estimate. The yield is a manual input and is not live-updated.")
-
-st.markdown("<a class='return-link' href='#page-top'>↑ Return to ticker search</a>", unsafe_allow_html=True)
 
 st.divider()
 st.markdown("#### Three value-investing lenses")
