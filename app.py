@@ -453,10 +453,12 @@ yield_observation = f" · {aaa_yield_date}" if aaa_yield_date else ""
 yield_source_link = f"<a href='https://fred.stlouisfed.org/series/AAA' target='_blank' rel='noopener noreferrer'>FRED Moody’s Aaa{yield_observation} ↗</a>"
 
 cards = st.columns(6)
+year_low_text = f"{year_low:,.2f}" if year_low is not None and pd.notna(year_low) else "—"
+year_high_text = f"{year_high:,.2f}" if year_high is not None and pd.notna(year_high) else "—"
 metrics = [
     ("Latest price", money(last_price, currency), f"{change:+.2f}% latest session" if change is not None else "Session change unavailable"),
     ("P/E ratio", ratio(info.get("trailingPE")), "Trailing twelve months"),
-    ("52-week range", f"{money(year_low, currency)} – {money(year_high, currency)}", "Reported or observed range"),
+    ("52-week range", f"{year_low_text} – {year_high_text}", "Reported or observed range"),
     ("10-year max decline", f"{max_decline:.1f}%", f"Peak {dd_start.strftime('%b %Y')} → bottom {dd_end.strftime('%b %Y')}"),
     ("Expected annual EPS growth", growth_summary, f"Next 5 years, annualized · {growth_source_link}"),
     ("Current 20-year AAA yield", yield_summary, yield_source_link),
