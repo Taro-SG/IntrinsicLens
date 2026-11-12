@@ -411,12 +411,21 @@ graham_number = math.sqrt(22.5 * average_eps * book_value_per_share) if average_
 
 st.markdown(f"<div style='margin:1.4rem 0 1rem'><span class='eyebrow'>{symbol}</span><h2 style='margin:.2rem 0;color:#1b2a20'>{name}</h2><span style='color:#728076'>{info.get('sector','')}{' · ' if info.get('sector') and info.get('industry') else ''}{info.get('industry','')}</span></div>", unsafe_allow_html=True)
 
-cards = st.columns(4)
+growth_summary_raw = str(st.session_state.get(f"graham_growth_{symbol}", "")).strip()
+yield_summary_raw = str(st.session_state.get(f"graham_yield_{symbol}", "")).strip()
+growth_summary_value = finite_number(growth_summary_raw.replace(",", ""))
+yield_summary_value = finite_number(yield_summary_raw.replace(",", ""))
+growth_summary = f"{growth_summary_value:g}%" if growth_summary_value is not None else ("Invalid" if growth_summary_raw else "Not entered")
+yield_summary = f"{yield_summary_value:g}%" if yield_summary_value is not None else ("Invalid" if yield_summary_raw else "Not entered")
+
+cards = st.columns(6)
 metrics = [
     ("Latest price", money(last_price, currency), f"{change:+.2f}% latest session" if change is not None else "Session change unavailable"),
     ("P/E ratio", ratio(info.get("trailingPE")), "Trailing twelve months"),
     ("52-week range", f"{money(year_low, currency)} – {money(year_high, currency)}", "Reported or observed range"),
     ("10-year max decline", f"{max_decline:.1f}%", f"Peak {dd_start.strftime('%b %Y')} → bottom {dd_end.strftime('%b %Y')}"),
+    ("Expected annual EPS growth", growth_summary, "g · input below"),
+    ("Current 20-year AAA yield", yield_summary, "Y · input below"),
 ]
 for col, (label, value, note) in zip(cards, metrics):
     with col:
