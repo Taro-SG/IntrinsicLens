@@ -411,30 +411,31 @@ graham_number = math.sqrt(22.5 * average_eps * book_value_per_share) if average_
 
 st.markdown(f"<div style='margin:1.4rem 0 1rem'><span class='eyebrow'>{symbol}</span><h2 style='margin:.2rem 0;color:#1b2a20'>{name}</h2><span style='color:#728076'>{info.get('sector','')}{' · ' if info.get('sector') and info.get('industry') else ''}{info.get('industry','')}</span></div>", unsafe_allow_html=True)
 
-cards = st.columns([1, 1, 1, 1, 1.15, 1.15])
+cards = st.columns(4)
 metrics = [
     ("Latest price", money(last_price, currency), f"{change:+.2f}% latest session" if change is not None else "Session change unavailable"),
     ("P/E ratio", ratio(info.get("trailingPE")), "Trailing twelve months"),
     ("52-week range", f"{money(year_low, currency)} – {money(year_high, currency)}", "Reported or observed range"),
     ("10-year max decline", f"{max_decline:.1f}%", f"Peak {dd_start.strftime('%b %Y')} → bottom {dd_end.strftime('%b %Y')}"),
 ]
-for col, (label, value, note) in zip(cards[:4], metrics):
+for col, (label, value, note) in zip(cards, metrics):
     with col:
         size = "20px" if label == "52-week range" else "25px"
         st.markdown(f"<div class='metric-card'><div class='metric-label'>{label}</div><div class='metric-value' style='font-size:{size}'>{value}</div><div class='metric-note'>{note}</div></div>", unsafe_allow_html=True)
-with cards[4]:
-    growth_text = st.text_input("Expected annual EPS growth, g (%)", placeholder="e.g. 5", key=f"graham_growth_{symbol}")
-with cards[5]:
-    yield_text = st.text_input("Current 20-year AAA yield, Y (%)", placeholder="e.g. 5", key=f"graham_yield_{symbol}")
 
 st.divider()
 st.markdown("#### Updated intrinsic value estimate")
 st.caption("V = [EPS × (8.5 + 2g) × 4.4] ÷ Y. EPS uses the latest reported annual figure; enter g and Y as percentage numbers (for example, 5 means 5%).")
-st.metric("Latest annual EPS", f"{currency} {latest_eps:.2f}" if latest_eps is not None else "—", latest_eps_basis or "Not reported")
-encoded_symbol = quote(symbol, safe="")
-sec_10k_url = f"https://www.sec.gov/edgar/search/#/q={encoded_symbol}&dateRange=all&category=custom&forms=10-K"
-sec_8k_url = f"https://www.sec.gov/edgar/search/#/q={encoded_symbol}&dateRange=all&category=custom&forms=8-K"
-st.markdown(f"[Latest SEC 10-K ↗]({sec_10k_url}) · [Latest SEC 8-K ↗]({sec_8k_url})")
+assumption_cols = st.columns([1, 1, 1.25])
+assumption_cols[0].metric("Latest annual EPS", f"{currency} {latest_eps:.2f}" if latest_eps is not None else "—", latest_eps_basis or "Not reported")
+with assumption_cols[1]:
+    growth_text = st.text_input("Expected annual EPS growth, g (%)", placeholder="e.g. 5", key=f"graham_growth_{symbol}")
+    encoded_symbol = quote(symbol, safe="")
+    sec_10k_url = f"https://www.sec.gov/edgar/search/#/q={encoded_symbol}&dateRange=all&category=custom&forms=10-K"
+    sec_8k_url = f"https://www.sec.gov/edgar/search/#/q={encoded_symbol}&dateRange=all&category=custom&forms=8-K"
+    st.markdown(f"[Latest SEC 10-K ↗]({sec_10k_url}) · [Latest SEC 8-K ↗]({sec_8k_url})")
+with assumption_cols[2]:
+    yield_text = st.text_input("Current 20-year AAA yield, Y (%)", placeholder="Enter current yield", key=f"graham_yield_{symbol}")
 
 try:
     growth_rate = float(growth_text.replace(",", "").strip()) if growth_text.strip() else None
