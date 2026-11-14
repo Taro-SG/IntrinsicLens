@@ -315,6 +315,13 @@ def live_chat_room():
         st.form_submit_button("Send", type="primary", on_click=post_chat_message)
 
 
+def admin_footer():
+    st.markdown(
+        "<div style='padding:18px 0 8px;text-align:center;color:#879087;font-size:12px'>开心是这个网站的管理员</div>",
+        unsafe_allow_html=True,
+    )
+
+
 @st.cache_data(ttl=900, show_spinner=False)
 def load_data(symbol):
     stock = yf.Ticker(symbol)
@@ -402,6 +409,7 @@ if "symbol" not in st.session_state:
     </div>
     """, unsafe_allow_html=True)
     live_chat_room()
+    admin_footer()
     st.stop()
 
 symbol = st.session_state["symbol"]
@@ -663,3 +671,4 @@ st.plotly_chart(dd_fig, use_container_width=True, config={"displayModeBar": Fals
 st.markdown("<div style='padding:16px 18px;border:1px solid #e6e9e3;border-radius:12px;color:#788178;font-size:12px'>Data is provided by Yahoo Finance through yfinance and may be delayed, incomplete, or unavailable. This tool is for informational and educational use, not investment advice. Financial statement labels and coverage can vary by company.</div>", unsafe_allow_html=True)
 
 live_chat_room()
+admin_footer()
