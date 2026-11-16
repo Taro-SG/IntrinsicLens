@@ -13,6 +13,8 @@ import yfinance as yf
 
 st.set_page_config(page_title="IntrinsicLens", page_icon="◉", layout="wide")
 CHAT_DB_PATH = Path(__file__).with_name("intrinsiclens_chat.sqlite3")
+START_DEMO_IMAGE = Path(__file__).with_name("assets") / "intrinsic-value-estimate-demo.png"
+MARGIN_DEMO_IMAGE = Path(__file__).with_name("assets") / "margin-of-safety-demo.png"
 
 st.markdown("""
 <style>
@@ -22,11 +24,15 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 [data-testid="stHeader"] { background: transparent; }
 .eyebrow { color:#6f806c; letter-spacing:.14em; font:500 11px 'DM Mono',monospace; text-transform:uppercase; }
 .hero { padding: 1.2rem 0 .3rem; }
-.contact-bar { margin:0 2px 8px; text-align:right; color:#68736b; font-size:12px; }
-.contact-bar a { color:#315f3b; font-weight:600; text-decoration:none; }
+.contact-bar { margin:0 2px 8px; text-align:right; color:#68736b; font-size:16px; }
+.contact-bar a { color:#315f3b; font-weight:700; text-decoration:none; }
 .contact-bar a:hover { text-decoration:underline; }
 .hero h1 { font-size: clamp(2.2rem, 4vw, 3.2rem); letter-spacing:-.055em; line-height:1.05; margin:.35rem 0 .5rem; color:#18251d; }
 .hero p { color:#68736b; font-size:1.02rem; margin:0; }
+.start-card { margin-top:1.2rem; padding:22px 24px; background:#edf1e9; border:1px solid #dce8dc; border-radius:14px; color:#586557; }
+.start-card h3 { margin:8px 0 4px; color:#1b3024; }
+.start-intro { margin:0 0 18px; color:#586557; }
+.start-steps { margin:0; padding-left:22px; display:grid; gap:8px; color:#586557; }
 .metric-card { background:#fff; border:1px solid #e6e9e3; border-radius:14px; padding:18px 20px; min-height:112px; }
 .metric-label { color:#778178; font-size:12px; margin-bottom:10px; }
 .metric-value { color:#19261f; font:500 25px 'DM Mono',monospace; letter-spacing:-.04em; }
@@ -393,19 +399,25 @@ if len(ticker_query) >= 2:
         st.caption("No matches found. You can still analyze the entered ticker directly.")
 
 if "symbol" not in st.session_state:
-    st.markdown("""
-    <div style="margin-top:1.2rem;padding:22px 24px;background:#edf1e9;border:1px solid #dce8dc;border-radius:14px;color:#586557">
-      <span class="eyebrow">Start here</span>
-      <h3 style="margin:8px 0 4px;color:#1b3024">IntrinsicLens</h3>
-      <p style="margin:0 0 18px;color:#586557"><strong>All-in-one intrinsic value calculator</strong> for estimating <strong>intrinsic value</strong> and <strong>buy-in price</strong> with individualized <strong>margin of safety</strong>.</p>
-      <div style="font-weight:600;color:#1b3024;margin-bottom:10px">Three quick steps</div>
-      <ol style="margin:0;padding-left:22px;display:grid;gap:8px;color:#586557">
-        <li>Use the “Updated intrinsic value estimate” to estimate intrinsic value for your business.</li>
-        <li>Plug the estimated value into “Your estimate of intrinsic value per share” under Margin of Safety.</li>
-        <li>Apply your margin of safety to estimate your entry &amp; exit price.</li>
-      </ol>
-    </div>
-    """, unsafe_allow_html=True)
+    with st.container(border=True):
+        intro_col, demo_col = st.columns([0.9, 1.3])
+        with intro_col:
+            st.markdown("""
+            <div class="start-card">
+              <span class="eyebrow">Start here</span>
+              <h3>IntrinsicLens</h3>
+              <p class="start-intro"><strong>All-in-one intrinsic value calculator</strong> for estimating <strong>intrinsic value</strong> and <strong>buy-in price</strong> with individualized <strong>margin of safety</strong>.</p>
+              <div style="font-weight:600;color:#1b3024;margin-bottom:10px">Three quick steps</div>
+              <ol class="start-steps">
+                <li>Use the “Updated intrinsic value estimate” to estimate intrinsic value for your business.</li>
+                <li>Plug the estimated value into “Your estimate of intrinsic value per share” under Margin of Safety.</li>
+                <li>Apply your margin of safety to estimate your entry &amp; exit price.</li>
+              </ol>
+            </div>
+            """, unsafe_allow_html=True)
+        with demo_col:
+            st.image(str(START_DEMO_IMAGE), caption="Updated intrinsic value estimate · example", use_container_width=True)
+            st.image(str(MARGIN_DEMO_IMAGE), caption="Three value-investing lenses · Margin of Safety example", use_container_width=True)
     live_chat_room()
     st.stop()
 
