@@ -22,6 +22,9 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 [data-testid="stHeader"] { background: transparent; }
 .eyebrow { color:#6f806c; letter-spacing:.14em; font:500 11px 'DM Mono',monospace; text-transform:uppercase; }
 .hero { padding: 1.2rem 0 .3rem; }
+.contact-bar { margin:0 2px 8px; text-align:right; color:#68736b; font-size:12px; }
+.contact-bar a { color:#315f3b; font-weight:600; text-decoration:none; }
+.contact-bar a:hover { text-decoration:underline; }
 .hero h1 { font-size: clamp(2.2rem, 4vw, 3.2rem); letter-spacing:-.055em; line-height:1.05; margin:.35rem 0 .5rem; color:#18251d; }
 .hero p { color:#68736b; font-size:1.02rem; margin:0; }
 .metric-card { background:#fff; border:1px solid #e6e9e3; border-radius:14px; padding:18px 20px; min-height:112px; }
@@ -345,6 +348,8 @@ def load_intraday_history(symbol, period):
         return intraday
     return intraday.dropna(subset=["Close"])
 
+
+st.markdown("<div class='contact-bar'>Have a problem? Contact me @ <a href='mailto:yangggsy@gmail.com'>yangggsy@gmail.com</a></div>", unsafe_allow_html=True)
 
 st.markdown("""
 <div class="principle-banner">
